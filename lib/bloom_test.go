@@ -6,7 +6,7 @@ package bloom
 
 import "testing"
 
-func Test_SuperFashHash(t *testing.T) {
+func Test_HashFunctions(t *testing.T) {
 	tests := []struct {
 		Str         string
 		BloomFilter uint32
@@ -38,5 +38,78 @@ func Test_SuperFashHash(t *testing.T) {
 		if s == r {
 			t.Errorf("Test %d: Expected s not to euqal r,  s=%d r=%d\n", ii, s, r)
 		}
+	}
+}
+
+// func BloomFilter(str string, filterData []byte) (likelyToHaveIt bool, n1, n2 uint32) {
+// func AddToBloomFilter(str string, filterData []byte) {
+
+func Test_BloomFilter_01(t *testing.T) {
+	tests := []struct {
+		Str   string
+		Found bool
+	}{
+		{Str: "", Found: false},
+		{Str: "abc", Found: false},
+		{Str: "tahiti", Found: true},
+		{Str: "Mookie", Found: true},
+		{Str: "lala", Found: false},
+	}
+
+	n_items := 5
+
+	// xyzzy - convert to New function that creates a BloomFilter type and initializes this and size of this
+	//	seed := uint32(552211)
+
+	filterData := make([]byte, n_items, n_items)
+	for ii := 0; ii < n_items; ii++ {
+		filterData[ii] = 'n'
+	}
+
+	for ii, test := range tests {
+
+		found, _, _ := BloomFilter(test.Str, filterData)
+		if found != test.Found {
+			t.Errorf("Test %d: For [%s] Expected %v got %v\n", ii, test.Str, test.Found, found)
+		}
+
+		AddToBloomFilter(test.Str, filterData)
+
+	}
+}
+
+func Test_BloomFilter_02(t *testing.T) {
+	tests := []struct {
+		Str   string
+		Found bool
+	}{
+		{Str: "", Found: false},
+		{Str: "abc", Found: false},
+		{Str: "tahiti", Found: false},
+		{Str: "Mookie", Found: false},
+		{Str: "lala", Found: false},
+		{Str: "lala", Found: true},
+		{Str: "abc", Found: true},
+	}
+
+	n_items := 64
+
+	// xyzzy - convert to New function that creates a BloomFilter type and initializes this and size of this
+	//	seed := uint32(552211)
+
+	filterData := make([]byte, n_items, n_items)
+	for ii := 0; ii < n_items; ii++ {
+		filterData[ii] = 'n'
+	}
+
+	for ii, test := range tests {
+
+		found, _, _ := BloomFilter(test.Str, filterData)
+		if found != test.Found {
+			t.Errorf("Test %d: For [%s] Expected %v got %v\n", ii, test.Str, test.Found, found)
+		}
+
+		AddToBloomFilter(test.Str, filterData)
+
 	}
 }
