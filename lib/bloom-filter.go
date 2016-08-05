@@ -4,6 +4,8 @@
 //
 package bloom
 
+import "fmt"
+
 /*
 uint32_t SuperFastHash (const char * data, int len) {
   uint32_t hash = len, tmp;
@@ -202,22 +204,79 @@ func Murmur(data []byte, seed uint32) (hash uint32) {
 	return hash
 }
 
-func BloomFilter(str string, filterData []byte) (likelyToHaveIt bool, n1, n2 uint32) {
-	modSize := uint32(len(filterData))
+type BloomFilter struct {
+	FilterData []byte
+	ModSize    uint32
+}
+
+func NewBloomFilter(size int) (rv *BloomFilter) {
+	ts := (size >> 3) + 1
+	rv = &BloomFilter{
+		FilterData: make([]byte, ts, ts),
+		ModSize:    uint32(size),
+	}
+	return
+}
+
+func (bf BloomFilter) String() string {
+	rv := ""
+	rv = fmt.Sprintf("%x ", bf.FilterData)
+	for ii := uint32(0); ii < bf.ModSize; ii++ {
+		s1 := ii >> 3
+		b1 := uint32(0x1) << (ii & 0x7)
+		if (uint32(bf.FilterData[s1]) & b1) != 0 {
+			rv += "S"
+		} else {
+			rv += "_"
+		}
+	}
+	return rv
+}
+
+func (bf *BloomFilter) Found(str string) (likelyToHaveIt bool, n1, n2 uint32) {
 	likelyToHaveIt = true
 
-	n1 = Murmur([]byte(str), uint32(552211)) % modSize
-	n2 = SuperFastHash([]byte(str)) % modSize
+	n1 = Murmur([]byte(str), uint32(552211)) % bf.ModSize
+	n2 = SuperFastHash([]byte(str)) % bf.ModSize
 
-	if filterData[n1] == 'n' || filterData[n2] == 'n' {
+	// fmt.Printf("Top: str [%s] n1=%d n2=%d\n", str, n1, n2)
+
+	s1 := n1 >> 3
+	b1 := uint32(0x1) << (n1 & 0x7)
+	s2 := n2 >> 3
+	b2 := uint32(0x1) << (n2 & 0x7)
+
+	// fmt.Printf("   n1=%d %x, s1 = %d, b1 = 0x%02x\n", n1, n1, s1, b1)
+	// fmt.Printf("   n2=%d %x, s2 = %d, b2 = 0x%02x\n", n2, n2, s2, b2)
+
+	if (uint32(bf.FilterData[s1])&b1) == 0 || (uint32(bf.FilterData[s2])&b2) == 0 {
 		likelyToHaveIt = false
 	}
 
 	return
 }
 
-func AddToBloomFilter(str string, filterData []byte) {
-	_, n1, n2 := BloomFilter(str, filterData)
-	filterData[n1] = 'y'
-	filterData[n2] = 'y'
+func (bf *BloomFilter) AddTo(str string) {
+	_, n1, n2 := bf.Found(str)
+
+	s1 := n1 >> 3
+	b1 := uint32(0x1) << (n1 & 0x7)
+	s2 := n2 >> 3
+	b2 := uint32(0x1) << (n2 & 0x7)
+
+	bf.FilterData[s1] |= byte(b1)
+	bf.FilterData[s2] |= byte(b2)
+}
+
+func (bf *BloomFilter) TestAndSet(str string) (likelyToHaveIt bool) {
+	likelyToHaveIt, n1, n2 := bf.Found(str)
+
+	s1 := n1 >> 3
+	b1 := uint32(0x1) << (n1 & 0x7)
+	s2 := n2 >> 3
+	b2 := uint32(0x1) << (n2 & 0x7)
+
+	bf.FilterData[s1] |= byte(b1)
+	bf.FilterData[s2] |= byte(b2)
+	return
 }

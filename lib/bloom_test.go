@@ -4,7 +4,10 @@
 //
 package bloom
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func Test_HashFunctions(t *testing.T) {
 	tests := []struct {
@@ -56,24 +59,16 @@ func Test_BloomFilter_01(t *testing.T) {
 		{Str: "lala", Found: false},
 	}
 
-	n_items := 5
-
-	// xyzzy - convert to New function that creates a BloomFilter type and initializes this and size of this
-	//	seed := uint32(552211)
-
-	filterData := make([]byte, n_items, n_items)
-	for ii := 0; ii < n_items; ii++ {
-		filterData[ii] = 'n'
-	}
+	bf := NewBloomFilter(5)
 
 	for ii, test := range tests {
 
-		found, _, _ := BloomFilter(test.Str, filterData)
+		found, _, _ := bf.Found(test.Str)
 		if found != test.Found {
 			t.Errorf("Test %d: For [%s] Expected %v got %v\n", ii, test.Str, test.Found, found)
 		}
 
-		AddToBloomFilter(test.Str, filterData)
+		bf.AddTo(test.Str)
 
 	}
 }
@@ -92,24 +87,48 @@ func Test_BloomFilter_02(t *testing.T) {
 		{Str: "abc", Found: true},
 	}
 
-	n_items := 64
-
-	// xyzzy - convert to New function that creates a BloomFilter type and initializes this and size of this
-	//	seed := uint32(552211)
-
-	filterData := make([]byte, n_items, n_items)
-	for ii := 0; ii < n_items; ii++ {
-		filterData[ii] = 'n'
-	}
+	bf := NewBloomFilter(64)
 
 	for ii, test := range tests {
 
-		found, _, _ := BloomFilter(test.Str, filterData)
+		found, _, _ := bf.Found(test.Str)
 		if found != test.Found {
 			t.Errorf("Test %d: For [%s] Expected %v got %v\n", ii, test.Str, test.Found, found)
 		}
 
-		AddToBloomFilter(test.Str, filterData)
+		bf.AddTo(test.Str)
 
 	}
 }
+
+func Test_BloomFilter_03(t *testing.T) {
+	tests := []struct {
+		Str   string
+		Found bool
+	}{
+		{Str: "", Found: false},
+		{Str: "abc", Found: false},
+		{Str: "tahiti", Found: false},
+		{Str: "Mookie", Found: false},
+		{Str: "lala", Found: false},
+		{Str: "lala", Found: true},
+		{Str: "abc", Found: true},
+	}
+
+	bf := NewBloomFilter(101)
+
+	for ii, test := range tests {
+		found := bf.TestAndSet(test.Str)
+		if db1 {
+			fmt.Printf("Filter = %s\n", bf)
+		}
+		if found != test.Found {
+			t.Errorf("Test %d: For [%s] Expected %v got %v\n", ii, test.Str, test.Found, found)
+		}
+	}
+	if db1 {
+		fmt.Printf("Filter = %s\n", bf)
+	}
+}
+
+const db1 = false
