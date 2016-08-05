@@ -209,6 +209,7 @@ type BloomFilter struct {
 	ModSize    uint32
 }
 
+// NewBloomFilter returns a bloom filter with a lookup table size of `size`.  The table is stored efficiently in bits. In my opinion it is best to use a prime number for the size.
 func NewBloomFilter(size int) (rv *BloomFilter) {
 	ts := (size >> 3) + 1
 	rv = &BloomFilter{
@@ -218,6 +219,7 @@ func NewBloomFilter(size int) (rv *BloomFilter) {
 	return
 }
 
+// String prints out the bloom filter in a human readable format, sort of.
 func (bf BloomFilter) String() string {
 	rv := ""
 	rv = fmt.Sprintf("%x ", bf.FilterData)
@@ -233,6 +235,7 @@ func (bf BloomFilter) String() string {
 	return rv
 }
 
+// Found looks up the specified value, `str`, and returns true if it is likely to be found, false if not found.  Also the n1, n2 hash values are returned.
 func (bf *BloomFilter) Found(str string) (likelyToHaveIt bool, n1, n2 uint32) {
 	likelyToHaveIt = true
 
@@ -256,6 +259,7 @@ func (bf *BloomFilter) Found(str string) (likelyToHaveIt bool, n1, n2 uint32) {
 	return
 }
 
+// Add to marks the `str` value as seen in the bloom filter.
 func (bf *BloomFilter) AddTo(str string) {
 	_, n1, n2 := bf.Found(str)
 
@@ -268,15 +272,18 @@ func (bf *BloomFilter) AddTo(str string) {
 	bf.FilterData[s2] |= byte(b2)
 }
 
+// TestAndSet returns true if the `str` is like to have been seen, false otherwise.  It sets this value as having been seen.
 func (bf *BloomFilter) TestAndSet(str string) (likelyToHaveIt bool) {
 	likelyToHaveIt, n1, n2 := bf.Found(str)
 
-	s1 := n1 >> 3
-	b1 := uint32(0x1) << (n1 & 0x7)
-	s2 := n2 >> 3
-	b2 := uint32(0x1) << (n2 & 0x7)
+	if !likelyToHaveIt {
+		s1 := n1 >> 3
+		b1 := uint32(0x1) << (n1 & 0x7)
+		s2 := n2 >> 3
+		b2 := uint32(0x1) << (n2 & 0x7)
 
-	bf.FilterData[s1] |= byte(b1)
-	bf.FilterData[s2] |= byte(b2)
+		bf.FilterData[s1] |= byte(b1)
+		bf.FilterData[s2] |= byte(b2)
+	}
 	return
 }
