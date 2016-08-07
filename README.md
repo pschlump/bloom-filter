@@ -41,3 +41,10 @@ and
 	func SuperFastHash(data []byte) (hash uint32) {
 ```
 
+
+Alternatives
+------------
+
+You might want to look at: https://github.com/irfansharif/cfilter
+These filters are usually better than Bloom filters.
+
