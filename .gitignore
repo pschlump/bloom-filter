@@ -28,3 +28,5 @@ _testmain.go
 *.exe
 *.test
 *.prof
+bloom-filter
+cuckoo-conext2014.pdf
